@@ -51,6 +51,10 @@ if __name__ == "__main__":
     x1 = np.ones((len(x), 1)) #create column array of ones
     x = np.concatenate((x1, x), axis = 1) #add column of ones
 
+    #we will later need the original input as a matrix with the first
+    #column being "1s"
+    x_origin_ones = np.concatenate((x1, x_origin[:, np.newaxis]), axis=1)
+
     #put y into column array
     y = np.array(y_origin)[:, np.newaxis]
 
@@ -66,9 +70,13 @@ if __name__ == "__main__":
           theta[1])
 
     #calculate "de-normalized" theta
+    one = np.array([1])[:, np.newaxis]
+    mu = np.array([mu])[:, np.newaxis]
+    mu = np.concatenate((-one, mu))
+    sigma = np.concatenate((one, np.array([sigma])[:, np.newaxis]))
     theta_denorm = np.zeros((2, 1))
-    theta_denorm[0] = theta[0] - theta[1] * mu / sigma
-    theta_denorm[1] = theta[1] / sigma
+    theta_denorm[0] = -np.sum(theta * mu / sigma)
+    theta_denorm[1:] = theta[1:] / sigma[1:]
     print("\n\nCalculated theta ('de-normalized') :\nintercept :",
           theta_denorm[0],
           "\nslope :",
