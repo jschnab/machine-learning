@@ -61,7 +61,7 @@ def grad_logistic(X, Y, theta):
     return np.dot(X.T, h - Y) / m
 
 def gradient_descent(X, Y, theta, alpha, n_iter):
-    """Return parameters for linear regression as determined by gradient
+    """Return parameters for logistic regression as determined by gradient
 descent, and history of cost values."""
     #define array to store cost history 
     cost_history = np.zeros(n_iter)
