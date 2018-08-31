@@ -9,10 +9,16 @@ import seaborn as sns
 sns.set()
 
 class LogisticRegression(object):
-    """This class provides methods to perform logistic regression on data."""
-    def __init__(self, alpha=0.001, n_iter=10000):
+    """This class provides methods to perform logistic regression on data.
+alpha          : learning rate
+n_iter         : number of iteration of gradient descent
+regularization : set to True if input should be regularized to avoid overfitting
+lamb           : lambda parameter for regularization"""
+    def __init__(self, alpha=0.001, n_iter=10000, regularization=False, lamb=1):
         self.alpha = alpha
         self.n_iter = n_iter
+        self.regularization = regularization
+        self.lamb = lamb
 
     def __add_intercept(self, X):
         """Add column of ones to X for vectorized calculations."""
@@ -50,15 +56,48 @@ descent, and history of cost values."""
         cost_history = np.zeros(self.n_iter)
         #loop for number of iterations to perform gradient descent
         for i in range(self.n_iter):
-            self.theta -= self.alpha * self.__gradient(X, Y, self.theta)
+            #calculate gradient
+            gradient = self.alpha * self.__gradient(X, Y, self.theta)
+            #if regularization is chosen, calculate regularization terms
+            #and add them to cost and gradient
+            if self.regularization:
+                theta_copy = np.copy(self.theta)
+                theta_copy[0] = 0 #regularization will not happen for this
+                cost_reg = (self.lamb / 2 / m) * np.dot((theta_copy.T, theta_copy))
+                gradient_reg = self.lamb * theta_copy / m
+                cost += cost_reg
+                gradient += gradient_reg
+            #update theta
+            self.theta -= gradient
+            #add cost to history
             cost_history[i] = self.__cost(X, Y, self.theta)
-        return self.theta, cost_history
+        return gradient, cost_history
 
     def accuracy(self, X, Y, theta):
         """Return prediction accuracy of the logistic model."""
         X = self.__add_intercept(X)
         p = np.round(self.__s(np.dot(X, self.theta)))
         return np.mean((p == Y).astype(int))
+
+    def map_feature(self, X1, X2, degree=6):
+        """Feature mapping to polynomial features."""
+        n = X1.shape[1]
+        out = np.ones((n, 1))
+        for i in range(1, degree + 1):
+            for j in range(i + 1):
+                out = np.concatenate((out, np.power(X1, i - j) * np.power(X2, j)))
+        return out
+
+    def plot_history(self, cost_history):
+        """Plot cost history of logistic regression."""
+        x_val = [i for i in range(len(cost_history))]
+        fig, ax = plt.subplots()
+        ax.plot(x_val, cost_history)
+        ax.set_xlabel("Number of iterations")
+        ax.set_ylabel("Cost")
+        ax.set_title("Cost history of logistic regression")
+        plt.show()
+ 
 
 if __name__ == "__main__":
     wine = datasets.load_wine()
@@ -68,15 +107,7 @@ if __name__ == "__main__":
     #fit data with logistic regression
     model = LogisticRegression(alpha=0.00001, n_iter=10000)
     theta, cost_history = model.fit(X, Y)
-    #plot cost history
-    x_val = [i for i in range(len(cost_history))]
-    fig, ax = plt.subplots()
-    ax.plot(x_val, cost_history)
-    ax.set_xlabel("Number of iterations")
-    ax.set_ylabel("Cost")
-    ax.set_title("Cost history of logistic regression")
-    plt.show()
-    #plot data and decision boundary
+   #plot data and decision boundary
     #we need only two points for a linear decision boundary
     x_boundary = [np.min(X[:, 0]), np.max(X[:, 0])]
     y_boundary = -(theta[0] + theta[1] * x_boundary) / theta[2]
