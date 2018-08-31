@@ -97,7 +97,6 @@ descent, and history of cost values."""
         ax.set_ylabel("Cost")
         ax.set_title("Cost history of logistic regression")
         plt.show()
- 
 
 if __name__ == "__main__":
     wine = datasets.load_wine()
@@ -125,3 +124,9 @@ if __name__ == "__main__":
     ax.legend()
     plt.show()
 
+    #dot the same analysis with feature mapping to polynomials for color intensity
+    #and total phenols
+    XX = wine.data[:, [5, 9]]
+    #convert wine id from 0, 1 and 2 to 1, 0 and 0 (wine A is the positive target)
+    YY = (wine.target[:, np.newaxis] == 0).astype(int)
+    
