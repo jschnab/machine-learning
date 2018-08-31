@@ -71,3 +71,4 @@ print(fprime(initial_theta))
 #results = fmin_bfgs(f, initial_theta, fprime, disp=True, maxiter=400, full_output=True, retall=True)
 #theta = results[0]
 #cost = results[1]
+
