@@ -16,24 +16,24 @@ alpha          : learning rate
 n_iter         : number of iteration of gradient descent
 regularization : set to True if input should be regularized to avoid overfitting
 lamb           : lambda parameter for regularization"""
-    def __init__(self, alpha=0.001, n_iter=10000, regularization=False, lamb=1, intercept=True, normalize=False, map_feature=False, feature_degree=4, plot_boundary=False):
+    def __init__(self, alpha=0.001, n_iter=10000, regularization=False, lamb=1, intercept=True, norm=False, map_feat=False, feature_degree=4, plot_boundary=False):
         self.alpha = alpha
         self.n_iter = n_iter
         self.regularization = regularization
         self.lamb = lamb
         self.intercept = intercept
-        self.normalize = normalize
-        self.map_feature = map_feature
+        self.norm = norm
+        self.map_feat = map_feat
         self.plot_boundary = plot_boundary
         self.degree = feature_degree
 
-    def _normalize(self, X):
+    def normalize(self, X):
         """Return normalized matrix."""
         mu = np.mean(X, axis=0)
         sigma = np.std(X, axis=0)
         return (X - mu) / sigma
 
-    def _map_feature(self, X, degree):
+    def map_feature(self, X, degree):
         """Feature mapping to polynomial features."""
         X1 = X[:, 0]
         X2 = X[:, 1]
@@ -45,7 +45,7 @@ lamb           : lambda parameter for regularization"""
                 mapped = np.concatenate((mapped, X1_pow * X2_pow), axis=1)
         return mapped
 
-    def _add_intercept(self, X):
+    def add_intercept(self, X):
         """Add column of ones to X for vectorized calculations."""
         intercept = np.ones((X.shape[0], 1))
         return np.concatenate((intercept, X), axis=1)
@@ -70,51 +70,67 @@ lamb           : lambda parameter for regularization"""
         h = self._s(np.dot(X, theta))
         return np.dot(X.T, h - Y) / m
 
-    def _accuracy(self, X, Y, theta):
+    def accuracy(self, X, Y, theta):
         """Return prediction accuracy of the logistic model."""
         p = np.round(self._s(np.dot(X, theta)))
         return np.mean((p == Y).astype(int))
 
     def _plot_boundary(self, X, Y, theta):
         """Plot data along with decision boundary."""
-        #grid range
-        u = np.linspace(min(X[:, 1]), max(X[:, 1]), 100)
-        v = np.linspace(min(X[:, 2]), max(X[:, 2]), 100)
+        #if we have a maximum of two features (excluding the intercept)
+        if X.shape[1] <= 3:
+            x_boundary = [np.min(X[:, 1]), np.max(X[:, 1])]
+            y_boundary = -(theta[0] + theta[1] * x_boundary) / theta[2]
+            #filter for target
+            is_target = (Y == 1).flatten()
+            #plot data with decision boundary line
+            fig, ax = plt.subplots()
+            ax.scatter(X[:, 1][is_target], X[:, 2][is_target], label="target", color="C0")
+            ax.scatter(X[:, 1][is_target == 0], X[:, 2][is_target == 0], label="others", color="C1")
+            ax.plot(x_boundary, y_boundary, color="C3", label="Decision boundary")
+            ax.legend()
+            plt.show()
 
-        z = np.zeros((len(u), len(v)))
-        #calculate z = theta*X over the grid
-        for i in range(1, len(u)):
-            for j in range(1, len(v)):
-                UV = np.concatenate((u[i].reshape((1, 1)), v[j].reshape((1, 1))), axis=1)
-                UV_mapped = self._add_intercept(self._map_feature(UV, self.degree))
-                z[i, j] = np.dot(UV_mapped, self.theta)
+        #if we have more than 3 features
+        else:
+            #grid range
+            u = np.linspace(min(X[:, 1]), max(X[:, 1]), 100)
+            v = np.linspace(min(X[:, 2]), max(X[:, 2]), 100)
 
-        #plot data and contour line
-        #create filter for target
-        is_target = (Y == 1).flatten()
-        #plot
-        fig, ax = plt.subplots()
-        ax.scatter(X[:, 1][is_target], X[:, 2][is_target], label="target", color="C0")
-        ax.scatter(X[:, 1][is_target == 0], X[:, 2][is_target == 0], label="others", color="grey")
-        ax.contour(u, v, z.T, 0)
-        ax.set_xlim(np.min(X[:, 1]) - 0.2, np.max(X[:, 1]) + 0.2)
-        ax.set_ylim(np.min(X[:, 2]) - 0.2, np.max(X[:, 2]) + 0.2)
-        ax.legend()
-        plt.show()
+            z = np.zeros((len(u), len(v)))
+            #calculate z = theta*X over the grid
+            for i in range(1, len(u)):
+                for j in range(1, len(v)):
+                    UV = np.concatenate((u[i].reshape((1, 1)), v[j].reshape((1, 1))), axis=1)
+                    UV_mapped = self.add_intercept(self.map_feature(UV, self.degree))
+                    z[i, j] = np.dot(UV_mapped, self.theta)
+
+            #plot data and contour line
+            #create filter for target
+            is_target = (Y == 1).flatten()
+            #plot
+            fig, ax = plt.subplots()
+            ax.scatter(X[:, 1][is_target], X[:, 2][is_target], label="target", color="C2")
+            ax.scatter(X[:, 1][is_target == 0], X[:, 2][is_target == 0], label="others", color="grey")
+            ax.contour(u, v, z.T, 0, colors="C3")
+            ax.set_xlim(np.min(X[:, 1]) - 0.2, np.max(X[:, 1]) + 0.2)
+            ax.set_ylim(np.min(X[:, 2]) - 0.2, np.max(X[:, 2]) + 0.2)
+            ax.legend()
+            plt.show()
 
     def fit(self, X, Y):
         """Return theta parameters, cost history and accuracy of model for logistic regression 
 determined by gradient descent, and history of cost values."""
  
         #normalize X
-        if self.normalize:
-            X = self._normalize(X)
+        if self.norm:
+            X = self.normalize(X)
         #map features to polynomial
-        if self.map_feature:
-            X = self._map_feature(X, self.degree)
+        if self.map_feat:
+            X = self.map_feature(X, self.degree)
         #add intercept to X
         if self.intercept:
-            X = self._add_intercept(X)
+            X = self.add_intercept(X)
         #initialize theta
         self.theta = np.zeros((X.shape[1], 1))
         #define array to store cost history
@@ -142,9 +158,9 @@ determined by gradient descent, and history of cost values."""
             self._plot_boundary(X, Y, self.theta)
 
         #calculate accuracy
-        accuracy = self._accuracy(X, Y, self.theta)
+        accu = self.accuracy(X, Y, self.theta)
 
-        return gradient, cost_history, accuracy
+        return gradient, cost_history, accu
 
     def plot_history(self, cost_history):
         """Plot cost history of logistic regression."""
@@ -161,12 +177,12 @@ if __name__ == "__main__":
     wine = datasets.load_wine()
 
     #extract the data from the data set
-    #X = wine.data[:, [4, 12]][wine.target != 2]
-    #Y = (wine.target[wine.target != 2])[:, np.newaxis]
+    X = wine.data[:, [4, 12]][wine.target != 2]
+    Y = (wine.target[wine.target != 2])[:, np.newaxis]
 
     #fit data with logistic regression
-    #model = LogisticRegression(alpha=0.00001, n_iter=10000)
-    #theta, cost_history, accuracy = model.fit(X, Y)
+    model = LogisticRegression(alpha=0.00001, n_iter=10000, plot_boundary=True)
+    theta, cost_history, accuracy = model.fit(X, Y)
 
     #plot data and decision boundary
     #we need only two points for a linear decision boundary
@@ -191,7 +207,7 @@ if __name__ == "__main__":
     #and total phenols
     #problems: overflow in exp in sigmoid function calculation and divid by zero in log of J 
 
-    model = LogisticRegression(alpha=0.01, n_iter=30000, lamb=0.01, regularization=True, normalize=True, map_feature=True, plot_boundary=True)
+    model = LogisticRegression(alpha=0.01, n_iter=30000, lamb=0.01, regularization=True, norm=True, map_feat=True, plot_boundary=True)
     XX = wine.data[:, [5, 9]]
 
     #convert wine id from 0, 1 and 2 to 1, 0 and 0 (wine A is the positive target)
