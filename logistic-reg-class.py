@@ -72,6 +72,8 @@ lamb           : lambda parameter for regularization"""
 
     def accuracy(self, X, Y, theta):
         """Return prediction accuracy of the logistic model."""
+        if X.shape[1] == theta.shape[0] - 1:
+            X = self.add_intercept(X)
         p = np.round(self._s(np.dot(X, theta)))
         return np.mean((p == Y).astype(int))
 
@@ -160,7 +162,7 @@ determined by gradient descent, and history of cost values."""
         #calculate accuracy
         accu = self.accuracy(X, Y, self.theta)
 
-        return gradient, cost_history, accu
+        return self.theta, cost_history, accu
 
     def plot_history(self, cost_history):
         """Plot cost history of logistic regression."""
@@ -184,24 +186,7 @@ if __name__ == "__main__":
     model = LogisticRegression(alpha=0.00001, n_iter=10000, plot_boundary=True)
     theta, cost_history, accuracy = model.fit(X, Y)
 
-    #plot data and decision boundary
-    #we need only two points for a linear decision boundary
-    #x_boundary = [np.min(X[:, 0]), np.max(X[:, 0])]
-    #y_boundary = -(theta[0] + theta[1] * x_boundary) / theta[2]
-    #make filters to filter X by wine
-    #is_A = (Y == 0).flatten()
-    #is_B = (Y == 1).flatten()
-    #plot data
-    #fig, ax = plt.subplots()
-    #ax.scatter(X[:, 0][is_A], X[:, 1][is_A], label="wine A", color="C1")
-    #ax.scatter(X[:, 0][is_B], X[:, 1][is_B], label="wine B", color="C2")
-    #ax.plot(x_boundary, y_boundary, color="C3", label="Decision boundary")
-    #ax.set_xlabel("Magnesium")
-    #ax.set_xlabel("Proline")
-    #ax.set_title("Classification of wines based on magnesium and proline content")
-    #ax.legend()
-    #plt.show()
-    #model.plot_history(cost_history)
+    model.plot_history(cost_history)
 
     #dot the same analysis with feature mapping to polynomials for color intensity
     #and total phenols
@@ -214,16 +199,4 @@ if __name__ == "__main__":
     YY = (wine.target[:, np.newaxis] == 0).astype(int)
     theta2, history2, accuracy2 = model.fit(XX, YY)
 
-    #plot data and decision boundary
-    #create filter for target
-    is_target = (YY == 1).flatten()
-    #fig, ax = plt.subplots()
-    #ax.scatter(XX[:, 0][is_target], XX[:, 1][is_target], label="target wine", color="C0")
-    #ax.scatter(XX[:, 0][is_target == 0], XX[:, 1][is_target == 0], label="other wines", color="grey")
-    #ax.set_xlabel("Total phenols")
-    #ax.set_ylabel("Color intensity")
-    #ax.legend()
-    #plt.show()
-
-    #plot cost history
     model.plot_history(history2)
