@@ -8,18 +8,42 @@ from sklearn.model_selection import train_test_split
 import seaborn as sns
 sns.set()
 
+
+
 class LogisticRegression(object):
     """This class provides methods to perform logistic regression on data.
 alpha          : learning rate
 n_iter         : number of iteration of gradient descent
 regularization : set to True if input should be regularized to avoid overfitting
 lamb           : lambda parameter for regularization"""
-    def __init__(self, alpha=0.001, n_iter=10000, regularization=False, lamb=1, intercept=True):
+    def __init__(self, alpha=0.001, n_iter=10000, regularization=False, lamb=1, intercept=True, normalize=False, map_feature=False, feature_degree=4, plot_boundary=False):
         self.alpha = alpha
         self.n_iter = n_iter
         self.regularization = regularization
         self.lamb = lamb
         self.intercept = intercept
+        self.normalize = normalize
+        self.map_feature = map_feature
+        self.plot_boundary = plot_boundary
+        self.degree = feature_degree
+
+    def _normalize(self, X):
+        """Return normalized matrix."""
+        mu = np.mean(X, axis=0)
+        sigma = np.std(X, axis=0)
+        return (X - mu) / sigma
+
+    def _map_feature(self, X, degree):
+        """Feature mapping to polynomial features."""
+        X1 = X[:, 0]
+        X2 = X[:, 1]
+        mapped = np.copy(X)
+        for i in range(3, self.degree + 1):
+            for j in range(i + 1):
+                X1_pow = np.power(X1, i - j)[:, np.newaxis]
+                X2_pow = np.power(X2, j)[:, np.newaxis]
+                mapped = np.concatenate((mapped, X1_pow * X2_pow), axis=1)
+        return mapped
 
     def _add_intercept(self, X):
         """Add column of ones to X for vectorized calculations."""
@@ -46,9 +70,48 @@ lamb           : lambda parameter for regularization"""
         h = self._s(np.dot(X, theta))
         return np.dot(X.T, h - Y) / m
 
+    def _accuracy(self, X, Y, theta):
+        """Return prediction accuracy of the logistic model."""
+        p = np.round(self._s(np.dot(X, theta)))
+        return np.mean((p == Y).astype(int))
+
+    def _plot_boundary(self, X, Y, theta):
+        """Plot data along with decision boundary."""
+        #grid range
+        u = np.linspace(min(X[:, 1]), max(X[:, 1]), 100)
+        v = np.linspace(min(X[:, 2]), max(X[:, 2]), 100)
+
+        z = np.zeros((len(u), len(v)))
+        #calculate z = theta*X over the grid
+        for i in range(1, len(u)):
+            for j in range(1, len(v)):
+                UV = np.concatenate((u[i].reshape((1, 1)), v[j].reshape((1, 1))), axis=1)
+                UV_mapped = self._add_intercept(self._map_feature(UV, self.degree))
+                z[i, j] = np.dot(UV_mapped, self.theta)
+
+        #plot data and contour line
+        #create filter for target
+        is_target = (Y == 1).flatten()
+        #plot
+        fig, ax = plt.subplots()
+        ax.scatter(X[:, 1][is_target], X[:, 2][is_target], label="target", color="C0")
+        ax.scatter(X[:, 1][is_target == 0], X[:, 2][is_target == 0], label="others", color="grey")
+        ax.contour(u, v, z.T, 0)
+        ax.set_xlim(np.min(X[:, 1]) - 0.2, np.max(X[:, 1]) + 0.2)
+        ax.set_ylim(np.min(X[:, 2]) - 0.2, np.max(X[:, 2]) + 0.2)
+        ax.legend()
+        plt.show()
+
     def fit(self, X, Y):
-        """Return theta parameters for logistic regression determined by gradient
-descent, and history of cost values."""
+        """Return theta parameters, cost history and accuracy of model for logistic regression 
+determined by gradient descent, and history of cost values."""
+ 
+        #normalize X
+        if self.normalize:
+            X = self._normalize(X)
+        #map features to polynomial
+        if self.map_feature:
+            X = self._map_feature(X, self.degree)
         #add intercept to X
         if self.intercept:
             X = self._add_intercept(X)
@@ -73,26 +136,15 @@ descent, and history of cost values."""
             self.theta -= gradient
             #add cost to history
             cost_history[i] = self._cost(X, Y, self.theta) + cost_reg
-            #spy to monitor how cost evolves
-            if i % 100 == 0:
-                print(cost_history[i])
-        return gradient, cost_history
 
-    def accuracy(self, X, Y, theta):
-        """Return prediction accuracy of the logistic model."""
-        X = self._add_intercept(X)
-        p = np.round(self._s(np.dot(X, self.theta)))
-        return np.mean((p == Y).astype(int))
+        #plot results
+        if self.plot_boundary:
+            self._plot_boundary(X, Y, self.theta)
 
-    def map_feature(self, X1, X2, degree=6):
-        """Feature mapping to polynomial features."""
-        mapped = np.ones((X1.shape[0], 1))
-        for i in range(1, degree + 1):
-            for j in range(i + 1):
-                X1_pow = np.power(X1, i - j)[:, np.newaxis]
-                X2_pow = np.power(X2, j)[:, np.newaxis]
-                mapped = np.concatenate((mapped, X1_pow * X2_pow), axis=1)
-        return mapped
+        #calculate accuracy
+        accuracy = self._accuracy(X, Y, self.theta)
+
+        return gradient, cost_history, accuracy
 
     def plot_history(self, cost_history):
         """Plot cost history of logistic regression."""
@@ -109,50 +161,53 @@ if __name__ == "__main__":
     wine = datasets.load_wine()
 
     #extract the data from the data set
-    X = wine.data[:, [4, 12]][wine.target != 2]
-    Y = (wine.target[wine.target != 2])[:, np.newaxis]
+    #X = wine.data[:, [4, 12]][wine.target != 2]
+    #Y = (wine.target[wine.target != 2])[:, np.newaxis]
 
     #fit data with logistic regression
-    model = LogisticRegression(alpha=0.00001, n_iter=10000)
-    theta, cost_history = model.fit(X, Y)
+    #model = LogisticRegression(alpha=0.00001, n_iter=10000)
+    #theta, cost_history, accuracy = model.fit(X, Y)
 
     #plot data and decision boundary
     #we need only two points for a linear decision boundary
-    x_boundary = [np.min(X[:, 0]), np.max(X[:, 0])]
-    y_boundary = -(theta[0] + theta[1] * x_boundary) / theta[2]
+    #x_boundary = [np.min(X[:, 0]), np.max(X[:, 0])]
+    #y_boundary = -(theta[0] + theta[1] * x_boundary) / theta[2]
     #make filters to filter X by wine
-    is_A = (Y == 0).flatten()
-    is_B = (Y == 1).flatten()
+    #is_A = (Y == 0).flatten()
+    #is_B = (Y == 1).flatten()
     #plot data
-    fig, ax = plt.subplots()
-    ax.scatter(X[:, 0][is_A], X[:, 1][is_A], label="wine A", color="C1")
-    ax.scatter(X[:, 0][is_B], X[:, 1][is_B], label="wine B", color="C2")
-    ax.plot(x_boundary, y_boundary, color="C3", label="Decision boundary")
-    ax.set_xlabel("Magnesium")
-    ax.set_xlabel("Proline")
-    ax.set_title("Classification of wines based on magnesium and proline content")
-    ax.legend()
-    plt.show()
-    model.plot_history(cost_history)
+    #fig, ax = plt.subplots()
+    #ax.scatter(X[:, 0][is_A], X[:, 1][is_A], label="wine A", color="C1")
+    #ax.scatter(X[:, 0][is_B], X[:, 1][is_B], label="wine B", color="C2")
+    #ax.plot(x_boundary, y_boundary, color="C3", label="Decision boundary")
+    #ax.set_xlabel("Magnesium")
+    #ax.set_xlabel("Proline")
+    #ax.set_title("Classification of wines based on magnesium and proline content")
+    #ax.legend()
+    #plt.show()
+    #model.plot_history(cost_history)
 
     #dot the same analysis with feature mapping to polynomials for color intensity
     #and total phenols
-#problems: overflow in exp in sigmoid function calculation and divid by zero in log of J 
-    #intercept is False because function map_feature adds it
-    #model = LogisticRegression(alpha=0.000001, n_iter=10000, lamb=100, regularization=True, intercept=False)
-    #XX = wine.data[:, [5, 9]]
-    #add polynomial features to XX
-    #XX = model.map_feature(XX[:, 0], XX[:, 1])
+    #problems: overflow in exp in sigmoid function calculation and divid by zero in log of J 
+
+    model = LogisticRegression(alpha=0.01, n_iter=30000, lamb=0.01, regularization=True, normalize=True, map_feature=True, plot_boundary=True)
+    XX = wine.data[:, [5, 9]]
+
     #convert wine id from 0, 1 and 2 to 1, 0 and 0 (wine A is the positive target)
-    #YY = (wine.target[:, np.newaxis] == 0).astype(int)
-    #theta2, history2 = model.fit(XX, YY)
+    YY = (wine.target[:, np.newaxis] == 0).astype(int)
+    theta2, history2, accuracy2 = model.fit(XX, YY)
+
     #plot data and decision boundary
     #create filter for target
-    #is_target = (YY == 1).flatten()
+    is_target = (YY == 1).flatten()
     #fig, ax = plt.subplots()
-    #ax.scatter(XX[:, 1][is_target], XX[:, 2][is_target], label="target wine", color="C0")
-    #ax.scatter(XX[:, 1][is_target == 0], XX[:, 2][is_target == 0], label="other wines", color="grey")
+    #ax.scatter(XX[:, 0][is_target], XX[:, 1][is_target], label="target wine", color="C0")
+    #ax.scatter(XX[:, 0][is_target == 0], XX[:, 1][is_target == 0], label="other wines", color="grey")
     #ax.set_xlabel("Total phenols")
     #ax.set_ylabel("Color intensity")
     #ax.legend()
     #plt.show()
+
+    #plot cost history
+    model.plot_history(history2)
