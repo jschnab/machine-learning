@@ -193,6 +193,7 @@ if __name__ == "__main__":
     #problems: overflow in exp in sigmoid function calculation and divid by zero in log of J 
 
     model = LogisticRegression(alpha=0.01, n_iter=30000, lamb=0.01, regularization=True, norm=True, map_feat=True, plot_boundary=True)
+    ##XX = wine.data[:, [5, 9]]
     XX = wine.data[:, [5, 9]]
 
     #convert wine id from 0, 1 and 2 to 1, 0 and 0 (wine A is the positive target)
