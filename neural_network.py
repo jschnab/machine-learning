@@ -1,0 +1,87 @@
+#script which defines a class for classification using a neural network
+#trained by backpropagation
+
+import pandas as pd
+import numpy as np
+
+class NeuralNet(object):
+    """This class provides method to perform classification of data using
+a neural network.
+alpha        : learning rate
+n_iter       : number of iteration of forward/backward propagation
+lamb         : lambda parameter for regularization
+hidden_size  : hidden layer size
+n_labels     : number of labels, i.e. number of output classes"""
+    def __init__(self, alpha=0.001, n_iter=400, lamb=1, hidden_size, n_labels):
+        self.alpha = alpha
+        self.n_iter = n_iter
+        self.lamb = lamb
+        self.hidden_size = hidden_size
+        self.n_labels = n_labels
+
+    def rand_weights(self, c_in, c_out, epsilon=0.12):
+        """Return randomly initialized weights of a layer with c_in incoming connections and c_out and c_out outgoing connection."""
+        return np.random.random((c_out, c_in)) * 2 * epsilon - epsilon
+
+    def add_intercept(self, X):
+        """Return matrix with an added column of ones."""
+        intercept = np.ones((X.shape[0], 1))
+        return np.concatenate((intercept, X), axis=1)
+
+    def _s(self, z):
+        """Return product of sigmoid function with z as input."""
+        return 1 / (1 + np.exp(-z))
+
+    def _sgrad(self, z):
+        """Return the gradient of sigmoid function with z as input."""
+        return self_s(z) * (1 - self._s(z))
+
+    def forward_prop(self, X, Y, Theta1, Theta2):
+        """Return values calculated during forward propagation and cost."""
+        X_1 = self.add_intercept(X)
+        z_2 = np.dot(X_1, Theta1)
+        a_2 = self._s(z_2)
+        z_3 = np.dot(a_2, Theta2)
+        h = self._s(z_3)
+
+        #calculate unregularized cost
+        J = np.sum(np.sum(Y * np.log(h) + (1 - Y) * np.log(1 - h))) / -m
+        #calculate regularization parameters
+        T1 = Theta1[:, 1:]
+        T2 = Theta2[:, 1:]
+        A = self.lamb / 2 / m
+        B = np.sum(np.sum(T1 * T1, axis=1))
+        C = np.sum(np.sum(T2 * T2, axis=1))
+        #calculate regularized cost
+        J_reg = J + A * (B + C)
+
+        return z_2, a_2, z_3, h, J
+
+    def backward_prop(self, z_2, a_2, z_3, h, Y, Theta1, Theta2, lamb, alpha):
+        """Return updated Theta1 and Theta2."""
+        #perform backward propagation per se
+        m = Y.shape[0]
+        d_3 = h - Y
+        d_2 = np.dot(d_3, T2) * self._sgrad(z_2)
+        Delta_1 = np.dot(d_2.T, X)
+        Delta_2 = np.dot(d_3, a_2)
+
+        #calculate unregularized gradient
+        Theta1_grad = Delta_1 / m
+        Theta2_grad = Delta_2 / m
+ 
+        #regularization of gradient
+        #replace first column with 0 to avoid regularization of bias
+        Theta1_copy = np.copy(Theta1)
+        Theta2_copy = np.copy(Theta2)
+        Theta1_copy[:, 0] = 0
+        Theta2_copy[:, 0] = 0
+        #scale Theta1/2 and add to gradient
+        Theta1_grad_reg = Theta1_grad + np.dot(lamb / m, Theta1_copy)
+        Theta2_grad_reg = Theta2_grad + np.dot(lamb / m, Theta2_copy)
+
+        #update Theta1/2
+        Theta1_updated = Theta1 - alpha * Theta1_grad_reg
+        Theta2_updated = Theta2 - alpha * Theta2_grad_reg
+
+        return Theta1_updated, Theta2_updated
