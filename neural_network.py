@@ -3,7 +3,7 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
+#from sklearn.preprocessing import OneHotEncoder
 import matplotlib.pyplot as plt
 import time
 
@@ -23,7 +23,8 @@ n_labels     : number of labels, i.e. number of output classes"""
         self.n_labels = n_labels
 
     def rand_weights(self, c_in, c_out, epsilon=0.12):
-        """Return randomly initialized weights of a layer with c_in incoming connections and c_out and c_out outgoing connection."""
+        """Return randomly initialized weights of a layer with c_in incoming 
+        connections and c_out and c_out outgoing connection."""
         return np.random.random((c_out, c_in + 1)) * 2 * epsilon - epsilon
 
     def add_intercept(self, X):
@@ -93,8 +94,6 @@ n_labels     : number of labels, i.e. number of output classes"""
 
     def predict(self, Theta1, Theta2, X, Y):
         """Return predicted output and accuracy of model."""
-        m = X.shape[0]
-
         #add intercept to X
         X_1 = self.add_intercept(X)
 
@@ -143,7 +142,9 @@ n_labels     : number of labels, i.e. number of output classes"""
             cost_history[i] = J_reg
 
             #back prop
-            Theta1, Theta2 = self.backward_prop(z_2, a_2, z_3, h, X_1, Y_1, Theta1, Theta2, self.lamb, self.alpha)
+            Theta1, Theta2 = self.backward_prop(z_2, a_2, z_3, h, X_1, Y_1, 
+                                                Theta1, Theta2, 
+                                                self.lamb, self.alpha)
 
         return Theta1, Theta2, cost_history
 
@@ -155,6 +156,29 @@ n_labels     : number of labels, i.e. number of output classes"""
         ax.set_ylabel("Cost")
         ax.set_title("Cost history of neural network parameters")
         plt.show()
+        
+    def export_theta(self, filename, Theta1, Theta2):
+        """Export parameters as csv file."""
+        #flatten matrices
+        thetas = np.concatenate((Theta1.flatten(), Theta2.flatten()))
+        
+        #save flat array as csv file
+        np.savetxt(filename, thetas, delimiter=",")
+        
+    def import_theta(self, filename, X):
+        """Import csv file containing parameters and convert to matrices of
+        relevant size. Specify X to reshape Theta1 correctly"""
+        #import csv file
+        data = pd.read_csv(filename, header=None)
+        weights = np.array(data).flatten()
+        
+        #extract and reshape matrices
+        Theta1 = weights[:self.hidden_size * (X.shape[1] + 1)]
+        Theta1 = Theta1.reshape((self.hidden_size, X.shape[1] + 1))
+        Theta2 = weights[self.hidden_size * (X.shape[1] + 1):]
+        Theta2 = Theta2.reshape((self.n_labels, self.hidden_size + 1))
+        
+        return Theta1, Theta2
 
 if __name__ == "__main__":
     #import data and build input and build input and output matrices
@@ -164,7 +188,7 @@ if __name__ == "__main__":
     Y = np.array(data_out)
 
     #define model, n_iter and alpha determined by trial and error
-    model = NeuralNet(hidden_size=25, n_labels=10, n_iter=400)
+    model = NeuralNet(hidden_size=100, n_labels=10, n_iter=400)
 
     #train the model
     #measure execution time
