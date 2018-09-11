@@ -192,17 +192,16 @@ if __name__ == "__main__":
     #X = np.array(data_in)
     #Y = np.array(data_out)
 
+    #define model, n_iter and alpha determined by trial and error
+    model = NeuralNet(hidden_size=25, n_labels=10, n_iter=400, lamb=0.64)
+
     data_train = np.array(pd.read_csv("mnist_train.csv"))
     X_train = data_train[:, 1:]
     Y_train = data_train[:, 0][:, np.newaxis]
     
     data_test = np.array(pd.read_csv("mnist_test.csv"))
-    #X_test = model.add_intercept(data_test[:, 1:])
     X_test = data_test[:, 1:]
     Y_test = data_test[:, 0][:, np.newaxis]
-
-    #define model, n_iter and alpha determined by trial and error
-    model = NeuralNet(hidden_size=25, n_labels=10, n_iter=50, lamb=0.16)
 
     #train the model
     #measure execution time
@@ -211,24 +210,27 @@ if __name__ == "__main__":
     stop = time.time()
     print("Time to train the neural network :", str(stop - start))
 
-    #determine accurary of the model
+    #determine accuracy of the model
     pred, accu = model.predict(Theta1, Theta2, X_train, Y_train)
     pred2, accu2 = model.predict(Theta1, Theta2, X_test, Y_test)
+    X_test = model.add_intercept(X_test)
+    print(model.forward_prop(X_test, Y_test, Theta1, Theta2)[4])
     
-    lambdas = [0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24]
-    cost_train = np.zeros(len(lambdas))
-    cost_test = np.zeros(len(lambdas))
-    for i in range(len(lambdas)):
-        model = NeuralNet(hidden_size=100, n_labels=10, n_iter=50, lamb=lambdas[i])
-        Theta1, Theta2, cost_history = model.fit(X_train, Y_train)
-        cost_train[i] = cost_history[-1]
-        _, _, _, _, cost_test[i] = model.forward_prop(X_test, Y_test, Theta1, Theta2)
+    #trying to optimize lambda
+    #lambdas = [0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24]
+    #cost_train = np.zeros(len(lambdas))
+    #cost_test = np.zeros(len(lambdas))
+    #for i in range(len(lambdas)):
+    #    model = NeuralNet(hidden_size=25, n_labels=10, n_iter=50, lamb=lambdas[i])
+    #    Theta1, Theta2, cost_history = model.fit(X_train, Y_train)
+    #    cost_train[i] = cost_history[-1]
+    #    _, _, _, _, cost_test[i] = model.forward_prop(X_test, Y_test, Theta1, Theta2)
     
-    fig, ax = plt.subplots()
-    ax.plot(lambdas, cost_train, color="C0", label="Training cost")
-    ax.plot(lambdas, cost_test, color="C1", label="Testing cost")
-    ax.legend()
-    plt.show()
+    #fig, ax = plt.subplots()
+    #ax.plot(lambdas, cost_train, color="C0", label="Training cost")
+    #ax.plot(lambdas, cost_test, color="C1", label="Testing cost")
+    #ax.legend()
+    #plt.show()
         
         
         
