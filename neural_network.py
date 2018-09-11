@@ -1,5 +1,9 @@
 #script which defines a class for classification using a neural network
 #trained by backpropagation
+#weights_digits.csv contains weights learned from digits.csv and
+#digits_output.csv (coursera machine learning tutorial)
+#weights_digits2.csv contains weights learned from mnist_train.csv with
+#400 units in the hidden layer
 
 import pandas as pd
 import numpy as np
@@ -104,7 +108,7 @@ n_labels     : number of labels, i.e. number of output classes"""
 
         #predicted output (remember indexing starts at zero)
         #prediction must have the same shape as Y
-        prediction = (np.argmax(h2, axis=1) + 1)[:, np.newaxis]
+        prediction = (np.argmax(h2, axis=1)+1)[:, np.newaxis]
 
         #accuracy
         accuracy = np.mean(prediction == Y)
