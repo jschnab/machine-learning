@@ -108,7 +108,7 @@ n_labels     : number of labels, i.e. number of output classes"""
 
         #predicted output (remember indexing starts at zero)
         #prediction must have the same shape as Y
-        prediction = (np.argmax(h2, axis=1)+1)[:, np.newaxis]
+        prediction = (np.argmax(h2, axis=1))[:, np.newaxis]
 
         #accuracy
         accuracy = np.mean(prediction == Y)
@@ -126,9 +126,10 @@ n_labels     : number of labels, i.e. number of output classes"""
         n_lab = self.n_labels #output layer size
 
         #recode Y into one-hot labels
+        #for Octave data set use Y.item(i) - 1
         Y_1 = np.zeros((Y.shape[0], n_lab))
         for i in range(Y.shape[0]):
-            Y_1[i, Y.item(i) - 1] = 1
+            Y_1[i, Y.item(i)] = 1
         #could import OneHotEncoder from sklearn.preprocessing
         #then Y_1 = OneHotEncoder(sparse=False).fit_transform(Y)
         
@@ -186,20 +187,57 @@ n_labels     : number of labels, i.e. number of output classes"""
 
 if __name__ == "__main__":
     #import data and build input and build input and output matrices
-    data_in = pd.read_csv("digits.csv", header=None)
-    data_out = pd.read_csv("digits_output.csv", header=None)
-    X = np.array(data_in)
-    Y = np.array(data_out)
+    #data_in = pd.read_csv("digits.csv", header=None)
+    #data_out = pd.read_csv("digits_output.csv", header=None)
+    #X = np.array(data_in)
+    #Y = np.array(data_out)
+
+    data_train = np.array(pd.read_csv("mnist_train.csv"))
+    X_train = data_train[:, 1:]
+    Y_train = data_train[:, 0][:, np.newaxis]
+    
+    data_test = np.array(pd.read_csv("mnist_test.csv"))
+    #X_test = model.add_intercept(data_test[:, 1:])
+    X_test = data_test[:, 1:]
+    Y_test = data_test[:, 0][:, np.newaxis]
 
     #define model, n_iter and alpha determined by trial and error
-    model = NeuralNet(hidden_size=100, n_labels=10, n_iter=400)
+    model = NeuralNet(hidden_size=25, n_labels=10, n_iter=50, lamb=0.16)
 
     #train the model
     #measure execution time
     start = time.time()
-    Theta1, Theta2, cost_history = model.fit(X, Y)
+    Theta1, Theta2, cost_history = model.fit(X_train, Y_train)
     stop = time.time()
     print("Time to train the neural network :", str(stop - start))
 
     #determine accurary of the model
-    pred, accu = model.predict(Theta1, Theta2, X, Y)
+    pred, accu = model.predict(Theta1, Theta2, X_train, Y_train)
+    pred2, accu2 = model.predict(Theta1, Theta2, X_test, Y_test)
+    
+    lambdas = [0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24]
+    cost_train = np.zeros(len(lambdas))
+    cost_test = np.zeros(len(lambdas))
+    for i in range(len(lambdas)):
+        model = NeuralNet(hidden_size=100, n_labels=10, n_iter=50, lamb=lambdas[i])
+        Theta1, Theta2, cost_history = model.fit(X_train, Y_train)
+        cost_train[i] = cost_history[-1]
+        _, _, _, _, cost_test[i] = model.forward_prop(X_test, Y_test, Theta1, Theta2)
+    
+    fig, ax = plt.subplots()
+    ax.plot(lambdas, cost_train, color="C0", label="Training cost")
+    ax.plot(lambdas, cost_test, color="C1", label="Testing cost")
+    ax.legend()
+    plt.show()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
