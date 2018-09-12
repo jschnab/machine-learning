@@ -2,8 +2,9 @@
 #trained by backpropagation
 #weights_digits.csv contains weights learned from digits.csv and
 #digits_output.csv (coursera machine learning tutorial)
-#weights_digits2.csv contains weights learned from mnist_train.csv with
-#400 units in the hidden layer
+#weights_digits2.csv contains weights learned from mnist_train.csv (60000 * 784)
+#with 60 units in the hidden layer, it was generated with 1600 iteration and
+#lambda = 1, alpha = 0.4
 
 import pandas as pd
 import numpy as np
@@ -193,7 +194,8 @@ if __name__ == "__main__":
     #Y = np.array(data_out)
 
     #define model, n_iter and alpha determined by trial and error
-    model = NeuralNet(hidden_size=25, n_labels=10, n_iter=400, lamb=0.64)
+    #model = NeuralNet(hidden_size=25, n_labels=10, n_iter=400, lamb=0.64)
+    model = NeuralNet(hidden_size=60, n_labels=10, n_iter=1600, lamb=1, alpha=0.4)
 
     data_train = np.array(pd.read_csv("mnist_train.csv"))
     X_train = data_train[:, 1:]
@@ -214,6 +216,7 @@ if __name__ == "__main__":
     pred, accu = model.predict(Theta1, Theta2, X_train, Y_train)
     pred2, accu2 = model.predict(Theta1, Theta2, X_test, Y_test)
     X_test = model.add_intercept(X_test)
+    print("The cost on the test sample is:")
     print(model.forward_prop(X_test, Y_test, Theta1, Theta2)[4])
     
     #trying to optimize lambda
