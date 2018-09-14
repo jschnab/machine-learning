@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
     #define model, n_iter and alpha determined by trial and error
     #model = NeuralNet(hidden_size=25, n_labels=10, n_iter=400, lamb=0.64)
-    model = NeuralNet(hidden_size=60, n_labels=10, n_iter=1600, lamb=1, alpha=0.4)
+    model = NeuralNet(hidden_size=60, n_labels=10, n_iter=100, lamb=1, alpha=0.4)
 
     data_train = np.array(pd.read_csv("mnist_train.csv"))
     X_train = data_train[:, 1:]
