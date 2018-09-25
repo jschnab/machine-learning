@@ -19,12 +19,28 @@ sys.path.append("D:\\machine-learning")
 from neural_network import NeuralNet
 
 #import data
-data = pd.read_csv("train_feat_engin.csv")
-X_train = data.iloc[1:data.shape[0], 1:data.shape[1]]
-Y_train = data.iloc[1:data.shape[0], 0]
+data = pd.read_csv("train_feat_engin.csv", header=None)
+X_df = data.iloc[0:data.shape[0], 1:data.shape[1]]
+Y_df = data.iloc[0:data.shape[0], 0]
+
+#put data from dataframe or data series to numpy array
+X = np.concatenate((X_df.iloc[0:data.shape[0], 0][:, np.newaxis],
+                    X_df.iloc[0:data.shape[0], 1][:, np.newaxis],
+                    X_df.iloc[0:data.shape[0], 2][:, np.newaxis],
+                    X_df.iloc[0:data.shape[0], 3][:, np.newaxis],
+                    X_df.iloc[0:data.shape[0], 4][:, np.newaxis], 
+                    X_df.iloc[0:data.shape[0], 5][:, np.newaxis], 
+                    X_df.iloc[0:data.shape[0], 6][:, np.newaxis]), axis=1)
+
+Y = np.array(Y_df)[:, np.newaxis]
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.25)
 
 #import test data
-test = pd.read_csv("test_feat_engin.csv")
+test = pd.read_csv("test_feat_engin.csv", header=None)
+
+#import non-engineered test data to get passenger Id
+test_original = pd.read_csv("test.csv")
 
 #generate and train neural network
 def train():
@@ -32,7 +48,7 @@ def train():
     model = NeuralNet(alpha=0.003, n_iter=300000, lamb=5, hidden_size=28, n_labels=2)
     
     start = time.time()
-    Theta1, Theta2, cost_history = model.fit(X_train, Y_train)
+    Theta1, Theta2, cost_history = model.fit(X, Y)
     stop = time.time()
     elapsed = stop - start
     
@@ -48,7 +64,7 @@ def optim():
     """Determine best lambda parameter"""
     #list of lambda values to try
     lambdas = [0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24]
-    #lambdas = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240]
+    #lambdas = [2.56, 5.12, 10, 20, 40, 80, 160, 320, 640, 1280, 2560]
     
     #list to record training parameters
     histories = []
@@ -92,10 +108,10 @@ def output_results():
     dummy = np.ones((418, 1))
     
     #predict survival of test examples
-    prediction = model.predict(Theta1, Theta2, test_subset, dummy)[0]
+    prediction = model.predict(Theta1, Theta2, test, dummy)[0]
         
     #prediction in column with passenger ID
-    prediction = np.hstack((test['PassengerId'][:, np.newaxis], prediction))
+    prediction = np.hstack((test_original['PassengerId'][:, np.newaxis], prediction))
     
     #save data as csv file
     np.savetxt("titanic_pred_nn.csv", prediction, delimiter=',', fmt='%d')
