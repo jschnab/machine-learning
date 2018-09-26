@@ -8,7 +8,7 @@
 
 import pandas as pd
 import numpy as np
-#from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 import matplotlib.pyplot as plt
 import time
 
@@ -128,11 +128,10 @@ n_labels     : number of labels, i.e. number of output classes"""
 
         #recode Y into one-hot labels
         #for Octave data set use Y.item(i) - 1
-        Y_1 = np.zeros((Y.shape[0], n_lab))
-        for i in range(Y.shape[0]):
-            Y_1[i, Y.item(i)] = 1
-        #could import OneHotEncoder from sklearn.preprocessing
-        #then Y_1 = OneHotEncoder(sparse=False).fit_transform(Y)
+        #Y_1 = np.zeros((Y.shape[0], n_lab))
+        #for i in range(Y.shape[0]):
+        #    Y_1[i, Y.item(i)] = 1
+        Y_1 = OneHotEncoder(sparse=False).fit_transform(Y)
         
         #initialize Theta matrices randomly
         Theta1 = self.rand_weights(in_size, hid_size, 0.12)
