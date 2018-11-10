@@ -94,9 +94,6 @@ for dataset in full_data:
     #mapping fare
     dataset.loc[dataset['Fare'] <= 7.91, 'Fare'] = 0
 
-
-    dataset.loc[dataset['Fare'] <= 7.91, 'Fare'] = 0
-
     dataset.loc[(dataset['Fare'] > 7.91) & (dataset['Fare'] <= 14.454), 'Fare'] = 1
     
     dataset.loc[(dataset['Fare'] > 14.454) & (dataset['Fare'] <= 31), 'Fare'] = 2
